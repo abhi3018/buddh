@@ -1,4 +1,4 @@
-import { fetchProfile,insertUser } from "../api";
+import { fetchProfile,insertUser,updateProfileInfo } from "../api";
 import { useSelector, useDispatch } from "react-redux";
 import { setCredentials, logout,setAllUsers,makeStore } from "../store";
 import { useRouter } from "next/router";
@@ -17,6 +17,7 @@ export default function Profile({ serverUser}) {
   const { users } = useSelector((state) => state.allUsers);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [profileInfo, setProfileInfo] = useState("");
   const dispatch = useDispatch(); 
   const router = useRouter();
 //console.log(users)
@@ -30,6 +31,16 @@ export default function Profile({ serverUser}) {
 //       dispatch(setCredentials({ token: null, user: serverUser }));
 //     }
 //   }, [serverUser, user, dispatch]);
+const mutateProfile = useMutation({
+    mutationFn: updateProfileInfo,
+    onSuccess: (data) => {
+      alert(data.user+" inserted successfully");
+      dispatch(setAllUsers([...users, {username:username,password:password}]));
+    },
+    onError: (err) => {
+      alert(err.response?.data?.message || "Something went wrong");
+    },
+  });
  const mutation = useMutation({
     mutationFn: insertUser,
     onSuccess: (data) => {
@@ -41,6 +52,10 @@ export default function Profile({ serverUser}) {
     },
   });
   const displayUser = user;
+  const handleSubmitProfileInfo = (e) => {
+    e.preventDefault();
+    mutateProfile.mutate({ profileInfo,username:displayUser.username });
+  };
 const handleSubmit = (e) => {
     e.preventDefault();
     mutation.mutate({ username, password });
@@ -58,6 +73,14 @@ console.log("username val:",username)  ;
       <p>Name: {displayUser.name}</p>
       <p>Username: {displayUser.username}</p>
       <p>Email: {displayUser.email}</p>
+      <form onSubmit={handleSubmitProfileInfo}>
+       <textarea
+          placeholder="Update your profile info"
+          value={profileInfo}
+          onChange={(e) => setProfileInfo(e.target.value)}
+        ></textarea>
+        <button type="submit">Update Profile</button>
+      </form>
       <button
         onClick={async () => {
           await fetch("/api/auth/logout", { method: "POST" });
